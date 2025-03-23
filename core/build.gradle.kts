@@ -1,7 +1,3 @@
-plugins {
-    id("io.github.goooler.shadow") version "8.1.8"
-}
-
 repositories {
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // papi
     maven("https://libraries.minecraft.net") // brigadier
@@ -9,13 +5,13 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") // paper
     maven("https://oss.sonatype.org/content/repositories/snapshots")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") // spigot
+    maven("https://repo.momirealms.net/releases/")
 }
 
 dependencies {
     // platform
     compileOnly("dev.folia:folia-api:${rootProject.properties["paper_version"]}-R0.1-SNAPSHOT")
     // subprojects
-    implementation(project(":common"))
     implementation(project(":api")) {
         exclude("dev.dejvokep", "boosted-yaml")
     }
@@ -31,7 +27,7 @@ dependencies {
     implementation("com.saicone.rtag:rtag:${rootProject.properties["rtag_version"]}")
     implementation("com.saicone.rtag:rtag-item:${rootProject.properties["rtag_version"]}")
     // nms util
-    implementation("com.github.Xiao-MoMi:Sparrow-Heart:${rootProject.properties["sparrow_heart_version"]}")
+    implementation("net.momirealms:sparrow-heart:${rootProject.properties["sparrow_heart_version"]}")
     // bstats
     compileOnly("org.bstats:bstats-bukkit:${rootProject.properties["bstats_version"]}")
     // config

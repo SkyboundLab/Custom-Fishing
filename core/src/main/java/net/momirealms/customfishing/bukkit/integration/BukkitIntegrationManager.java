@@ -33,6 +33,7 @@ import net.momirealms.customfishing.bukkit.integration.papi.CompetitionPapi;
 import net.momirealms.customfishing.bukkit.integration.papi.CustomFishingPapi;
 import net.momirealms.customfishing.bukkit.integration.papi.StatisticsPapi;
 import net.momirealms.customfishing.bukkit.integration.quest.BattlePassQuest;
+import net.momirealms.customfishing.bukkit.integration.quest.BeautyFishingQuest;
 import net.momirealms.customfishing.bukkit.integration.quest.BetonQuestQuest;
 import net.momirealms.customfishing.bukkit.integration.quest.ClueScrollsQuest;
 import net.momirealms.customfishing.bukkit.integration.region.WorldGuardRegion;
@@ -54,11 +55,13 @@ import java.util.HashMap;
 import java.util.List;
 
 public class BukkitIntegrationManager implements IntegrationManager {
-
+    private static BukkitIntegrationManager instance;
     private final BukkitCustomFishingPlugin plugin;
     private final HashMap<String, LevelerProvider> levelerProviders = new HashMap<>();
     private final HashMap<String, EnchantmentProvider> enchantmentProviders = new HashMap<>();
     private SeasonProvider seasonProvider;
+    private boolean hasFloodGate;
+    private boolean hasGeyser;
 
     public BukkitIntegrationManager(BukkitCustomFishingPlugin plugin) {
         this.plugin = plugin;
@@ -66,7 +69,21 @@ public class BukkitIntegrationManager implements IntegrationManager {
             this.load();
         } catch (Exception e) {
             plugin.getPluginLogger().warn("Failed to load integrations", e);
+        } finally {
+            instance = this;
         }
+    }
+
+    public static BukkitIntegrationManager instance() {
+        return instance;
+    }
+
+    public boolean hasFloodGate() {
+        return hasFloodGate;
+    }
+
+    public boolean hasGeyser() {
+        return hasGeyser;
     }
 
     @Override
@@ -84,7 +101,15 @@ public class BukkitIntegrationManager implements IntegrationManager {
             registerEntityProvider(new ItemsAdderEntityProvider());
         }
         if (isHooked("CraftEngine")) {
-            registerItemProvider(new CraftEngineProvider());
+            try {
+                Class<?> ceItemProviderClass = Class.forName("net.momirealms.customfishing.bukkit.integration.item.CraftEngineItemProvider");
+                Constructor<?> itemProviderConstructor = ceItemProviderClass.getDeclaredConstructor();
+                itemProviderConstructor.setAccessible(true);
+                ItemProvider itemProvider = (ItemProvider) itemProviderConstructor.newInstance();
+                registerItemProvider(itemProvider);
+            } catch (ReflectiveOperationException e) {
+                plugin.getPluginLogger().warn("Failed to hook CraftEngine", e);
+            }
         }
         if (isHooked("Nexo")) {
             try {
@@ -98,12 +123,15 @@ public class BukkitIntegrationManager implements IntegrationManager {
                 nexoBlockProviderConstructor.setAccessible(true);
                 BlockProvider blockProvider = (BlockProvider) nexoBlockProviderConstructor.newInstance();
                 registerBlockProvider(blockProvider);
-            } catch (ReflectiveOperationException exception) {
-                plugin.getPluginLogger().warn("Failed to hook Nexo", exception);
+            } catch (ReflectiveOperationException e) {
+                plugin.getPluginLogger().warn("Failed to hook Nexo", e);
             }
         }
         if (isHooked("MMOItems")) {
             registerItemProvider(new MMOItemsItemProvider());
+        }
+        if (isHooked("EcoItems")) {
+            registerItemProvider(new EcoItemsProvider());
         }
         if (isHooked("Oraxen", "1")) {
             registerItemProvider(new OraxenItemProvider());
@@ -147,6 +175,7 @@ public class BukkitIntegrationManager implements IntegrationManager {
         }
         if (isHooked("AuraSkills")) {
             registerLevelerProvider(new AuraSkillsLevelerProvider());
+            registerItemProvider(new AuraSkillItemProvider());
         }
         if (isHooked("AdvancedEnchantments")) {
             registerEnchantmentProvider(new AdvancedEnchantmentsProvider());
@@ -182,6 +211,15 @@ public class BukkitIntegrationManager implements IntegrationManager {
         }
         if (isHooked("ShopGUIPlus")) {
             ShopGUIHook.register();
+        }
+        if (isHooked("BeautyQuests")) {
+            BeautyFishingQuest.register();
+        }
+        if (Bukkit.getPluginManager().getPlugin("Geyser-Spigot") != null) {
+            this.hasGeyser = true;
+        }
+        if (Bukkit.getPluginManager().getPlugin("floodgate") != null) {
+            this.hasFloodGate = true;
         }
     }
 
